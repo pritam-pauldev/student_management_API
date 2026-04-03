@@ -9,4 +9,3 @@ router.put("/:id", controller.updateStudentByID);
 router.delete("/:id", controller.deleteStudentByID);
 
 module.exports = router;
-

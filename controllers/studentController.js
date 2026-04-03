@@ -1,111 +1,101 @@
 const connection = require("../utils/db_connection");
+const Students = require("../models/students");
 
-const addNewStudent = (req, res) => {
+const addNewStudent = async (req, res) => {
   const { name, email, age } = req.body;
-  const insertQuery = `
-    INSERT INTO Students(name, email, age)
-    VALUES(?,?,?);
-    `;
-  connection.execute(insertQuery, [name, email, age], (err, result) => {
-    if (err) {
-      console.log(err);
-      res.status(500).send(err.message);
-      return;
-    } else {
-      console.log("New studdent added");
-      res
-        .status(201)
-        .send(
-          `name:${name}, email:${email}, age${age} inserted into the database`,
-        );
-    }
-  });
+  try {
+    await Students.create({
+      name: name,
+      email: email,
+      age: age,
+    });
+    console.log("New studdent added");
+    res
+      .status(201)
+      .send(
+        `name:${name}, email:${email}, age${age} inserted into the database`,
+      );
+  } catch (err) {
+    console.log(err);
+    res.status(500).send(err.message);
+  }
 };
 
-const getAllStudent = (req, res) => {
-  const getAllQuery = `
-    SELECT * FROM Students;
-    `;
-  connection.execute(getAllQuery, (err, result) => {
-    if (err) {
-      console.log(err);
-      res.status(500).send(err.message);
-      return;
-    } else {
-      console.log("Get All Student");
-      res.status(200).send({
-        message: "All Students data fetched",
-        data: result,
+const getAllStudent = async (req, res) => {
+  try {
+    const student = await Students.findAll();
+    console.log("Get All Student");
+    const result = student.map((s) => s.toJSON());
+    res.status(200).send({
+      message: "All Students data fetched",
+      data: result,
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(500).send(err.message);
+  }
+};
+
+const getStudentByID = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const student = await Students.findByPk(id);
+
+    // 404
+    if (!student) {
+      return res.status(404).send({
+        message: "Student not found",
       });
     }
-  });
+
+    console.log("Get Student by ID");
+    const result = student?.toJSON();
+    res.status(200).send({
+      message: "Student data fetched",
+      data: result,
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(500).send(err.message);
+  }
 };
 
-const getStudentByID = (req, res) => {
-  const id = req.params.id;
-  const getIdQuery = `
-    SELECT * FROM Students
-    WHERE id = ?;
-    `;
-  connection.execute(getIdQuery, [id], (err, result) => {
-    if (err) {
-      console.log(err);
-      res.status(500).send(err.message);
-      return;
-    } else if (result.affectedRows === 0) {
+const updateStudentByID = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const { name, email, age } = req.body;
+    console.log(name, email, age);
+    const student = await Students.findByPk(id);
+    if (!student) {
+      return res.status(404).send({
+        message: "Student not found",
+      });
+    }
+    await student.update({ name: name, email: email, age: age });
+    console.log("Student data updated");
+    res.status(200).send(`Student data updated by its ID:${id}`);
+  } catch (err) {
+    console.log(err);
+    res.status(500).send(err.message);
+  }
+};
+
+const deleteStudentByID = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const student = await Students.findByPk(id);
+    if (!student) {
+      console.log("Student not found");
       res.status(404).send("Student not found");
-    } else {
-      console.log(`Student data fetch by its ID:${id}`);
-      res.status(200).send({
-        message: "Student data fetch by its ID",
-        data: result,
-      });
-    }
-  });
-};
-
-const updateStudentByID = (req, res) => {
-  const id = req.params.id;
-  const { name, email, age } = req.body;
-  const updateQuery = `
-    UPDATE Students
-    SET name = ?,
-        email = ?,
-        age = ?
-    WHERE id = ?;
-    `;
-  connection.execute(updateQuery, [name, email, age, id], (err, result) => {
-    if (err) {
-      console.log(err);
-      res.status(500).send(err.message);
       return;
-    } else if (result.affectedRows === 0) {
-      res.status(404).send("student not found");
-    } else {
-      console.log("Student data updated");
-      res.status(200).send(`Student data updated by its ID:${id}`);
     }
-  });
-};
-
-const deleteStudentByID = (req, res) => {
-  const id = req.params.id;
-  const deleteQuery = `
-    DELETE FROM Students
-    WHERE id = ?;
-    `;
-  connection.execute(deleteQuery, [id], (err, result) => {
-    if (err) {
-      console.log(err);
-      res.status(500).send(err.message);
-      return;
-    } else if (result.affectedRows === 0) {
-      res.status(404).send("student not found");
-    } else {
-      console.log("Student data deleted");
-      res.status(200).send(`Student data deleted by its ID:${id}`);
-    }
-  });
+    student.destroy();
+    console.log("Student data deleted");
+    res.status(200).send(`Student data deleted by its ID:${id}`);
+  } catch (err) {
+    console.log(err);
+    res.status(500).send(err.message);
+  }
 };
 
 module.exports = {
