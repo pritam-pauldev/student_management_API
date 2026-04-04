@@ -7,5 +7,6 @@ router.get("/:id", controller.getStudentByID);
 router.post("/", controller.addNewStudent);
 router.put("/:id", controller.updateStudentByID);
 router.delete("/:id", controller.deleteStudentByID);
+router.post("/addingStudentWithDepartment", controller.addingValueInStudentsAndDepartment);
 
 module.exports = router;
